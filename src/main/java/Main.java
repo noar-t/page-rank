@@ -57,7 +57,7 @@ public class Main {
 
       // Number of links in the RDD
       final long numLinks = allLinks.count();
-
+      final Double dampingFactor = 0.85;
 
       final JavaPairRDD<String, Integer> zeroedWeightedLinks = allLinks.mapToPair(x -> new Tuple2<>(x, 0));
       final JavaPairRDD<String, Integer> weightedOutgoingLinks = urlPairs.mapToPair(x -> new Tuple2<>(x._1, 1));
@@ -86,7 +86,7 @@ public class Main {
       //URL to rank mapping
       JavaPairRDD<String, Double> pageRanks = allLinks.mapToPair(x -> new Tuple2<>(x, 1.0));
 
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 100; i++) {
         System.out.println("-------------- Iteration:" + i + " -------------");
         //pageRanks.foreach(x -> System.out.println(x));
 
@@ -149,6 +149,10 @@ public class Main {
 
         //destPRs = destPRs.union(weightedNoOutgoingPR);
         destPRs = destPRs.reduceByKey((a, b) -> a + b);
+
+        // Added Damping Factor
+        destPRs = destPRs.mapToPair(x -> new Tuple2<>(x._1, 1 - dampingFactor + dampingFactor * x._2));
+
         destPRs.foreach(x -> System.out.println("dest PRs" + x));
 
         pageRanks = destPRs;
