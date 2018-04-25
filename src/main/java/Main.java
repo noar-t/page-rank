@@ -24,8 +24,6 @@ public class Main {
 
       // filename/links pairs
       final JavaPairRDD<String, String> input = sc.wholeTextFiles(path);
-      final long numPages = input.count();
-
 
 
       // cleanup file names produce <URL, Contained URLS>
@@ -49,10 +47,10 @@ public class Main {
       });
 
       // Get dest -> src pairs
-      JavaPairRDD<String, String> reversePairs = urlPairs.mapToPair(x -> x.swap());
+      final JavaPairRDD<String, String> reversePairs = urlPairs.mapToPair(x -> x.swap());
 
       // All possible linked pairs
-      JavaPairRDD<String, String> allPairs = urlPairs.union(reversePairs);
+      final JavaPairRDD<String, String> allPairs = urlPairs.union(reversePairs);
 
       // All possible urls in graph  (src or dest)
       final JavaRDD<String> allLinks = allPairs.map(x -> x._1).distinct();
@@ -83,10 +81,6 @@ public class Main {
           .filter(x -> x._2 >= 1)
           .map(x -> x._1);
 
-      // TODO add in links contained in allLinks but not yet in outgoingCount
-
-
-
       // ***** This is where the fun starts *****
 
       //URL to rank mapping
@@ -94,13 +88,14 @@ public class Main {
 
       for (int i = 0; i < 3; i++) {
         System.out.println("-------------- Iteration:" + i + " -------------");
-        pageRanks.foreach(x -> System.out.println(x));
+        //pageRanks.foreach(x -> System.out.println(x));
 
         // Produces (url | cur page rank) of all pages without links
         JavaPairRDD<String, Double> noOutgoingTemp = pageRanks
                 .join(outgoingCount)
                 .filter(x -> x._2._2 == 0)
                 .mapToPair(x -> new Tuple2<>(x._1, x._2._1));
+
 
         // Calculate the offset to add to every page from the PRs of the sinks
         Double total = noOutgoingTemp.map(x -> x._2).reduce((a, b) -> a + b);
@@ -111,6 +106,8 @@ public class Main {
                 .join(outgoingCount)
                 .filter(x -> x._2._2 >= 1);
 
+
+
         JavaPairRDD<String, Double> outgoingTemp = outgoingTempCount
                 .mapToPair(x ->
                         new Tuple2<>(x._1, x._2._1));
@@ -119,41 +116,43 @@ public class Main {
         //src link/(PR/#outgoing links)
         JavaPairRDD<String, Double> weightedOutgoingPR = outgoingTempCount
             .mapToPair(x -> {
-
-          System.out.println("Inside the map " + x);
           double effectivePR = x._2._1 / x._2._2;
           return new Tuple2<>(x._1, effectivePR);
         });
+
+        //weightedOutgoingPR.foreach(x -> System.out.println("outpr" + x));
 
         // Calculate how much needs to be subtracted for each page that has no outgoing links
         JavaPairRDD<String, Double> weightedNoOutgoingPR = pageRanks
                 .join(noOutgoingTemp)
                 .mapToPair(x ->
                     new Tuple2<>(x._1, (-1 * x._2._1) / (numLinks - 1)));
+        //weightedNoOutgoingPR.foreach(x -> System.out.println("noout PR" + x));
 
-        // Reset the PR of the links with no outgoing links, because the offset gets added back
-        //noOutgoingTemp = noOutgoingTemp.mapToPair(x -> new Tuple2<>(x._1, 0.0));
-
-        JavaPairRDD<String, Double> newPRs = outgoingTemp
-                .union(noOutgoingTemp)
+        // TODO need to set outgoing prs to 0
+        JavaPairRDD<String, Double> newPRsOnlyOff = outgoingTemp
+                .mapToPair(x -> new Tuple2<>(x._1, 0.0))
+                .union(weightedNoOutgoingPR)
                 .mapToPair(x ->
                         new Tuple2<>(x._1, x._2 + offset));
 
-        //weightedOutgoingPR.foreach(x -> System.out.println(x));
+        //newPRsOnlyOff.foreach(x -> System.out.println("new PRs" + x));
 
         //TODO also add dampening
 
         JavaPairRDD<String, Double> destPRs = weightedOutgoingPR
-                .join(allPairs)
+                .join(urlPairs)
                 .mapToPair(x ->
                         new Tuple2<>(x._2._2, x._2._1));
 
-        destPRs = destPRs.union(weightedNoOutgoingPR);
+        destPRs = destPRs.union(newPRsOnlyOff);
+
+        //destPRs = destPRs.union(weightedNoOutgoingPR);
         destPRs = destPRs.reduceByKey((a, b) -> a + b);
+        destPRs.foreach(x -> System.out.println("dest PRs" + x));
 
         pageRanks = destPRs;
       }
-
 
       System.out.println("-------------- Final Page Ranks -------------");
       pageRanks.foreach(x -> System.out.println(x));
