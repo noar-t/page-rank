@@ -23,6 +23,7 @@ public class PageRank {
     JavaSparkContext sc = new JavaSparkContext(conf);
     sc.setLogLevel("ERROR");
 
+    long startTime = System.nanoTime();
     // filename/links pairs
     final JavaPairRDD<String, String> input = sc.wholeTextFiles(path);
 
@@ -69,18 +70,24 @@ public class PageRank {
     final JavaPairRDD<String, Integer> outgoingCount = zeroedWeightedLinks
             .union(weightedOutgoingLinks)
             .reduceByKey((a, b) -> a + b);
-    outgoingCount.cache();
+    //outgoingCount.cache();
 
     //System.out.println(" --- number of outgoing links --- ");
     //outgoingCount.foreach(x -> System.out.println(x));
 
+    long setupTime = System.nanoTime() - startTime;
+    System.out.println("Setup time = " + setupTime + " nanoseconds");
+
+
     // ***** This is where the fun starts *****
+
+    startTime = System.nanoTime();
 
     //URL to rank mapping
     JavaPairRDD<String, Double> pageRanks = allLinks.mapToPair(x -> new Tuple2<>(x, 1.0));
     pageRanks.cache();
 
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 10; i++) {
       //System.out.println("-------------- Iteration:" + i + " -------------");
       //pageRanks.foreach(x -> System.out.println(x));
 
@@ -89,7 +96,7 @@ public class PageRank {
               .join(outgoingCount)
               .filter(x -> x._2._2 == 0)
               .mapToPair(x -> new Tuple2<>(x._1, x._2._1));
-      noOutgoingTemp.cache();
+      //noOutgoingTemp.cache();
 
 
       // Calculate the offset to add to every page from the PRs of the sinks
@@ -100,7 +107,7 @@ public class PageRank {
       JavaPairRDD<String, Tuple2<Double, Integer>> outgoingTempCount = pageRanks
               .join(outgoingCount)
               .filter(x -> x._2._2 >= 1);
-      outgoingCount.cache();
+      //outgoingCount.cache();
 
 
 
@@ -115,7 +122,7 @@ public class PageRank {
                 double effectivePR = x._2._1 / x._2._2;
                 return new Tuple2<>(x._1, effectivePR);
               });
-      weightedOutgoingPR.cache();
+      //weightedOutgoingPR.cache();
 
       //weightedOutgoingPR.foreach(x -> System.out.println("outpr" + x));
 
@@ -124,7 +131,7 @@ public class PageRank {
               .join(noOutgoingTemp)
               .mapToPair(x ->
                       new Tuple2<>(x._1, (-1 * x._2._1) / (numLinks - 1)));
-      weightedNoOutgoingPR.cache();
+      //weightedNoOutgoingPR.cache();
 
       //weightedNoOutgoingPR.foreach(x -> System.out.println("noout PR" + x));
 
@@ -135,7 +142,7 @@ public class PageRank {
               .mapToPair(x ->
                       new Tuple2<>(x._1, x._2 + offset));
 
-      newPRsOnlyOff.cache();
+      //newPRsOnlyOff.cache();
 
       //newPRsOnlyOff.foreach(x -> System.out.println("new PRs" + x));
 
@@ -160,7 +167,16 @@ public class PageRank {
       pageRanks.cache();
     }
 
+    long pageRankTime = System.nanoTime() - startTime;
+
+    System.out.println("PageRank algorithm time = " + pageRankTime + " nanoseconds");
+
+    startTime = System.nanoTime();
     System.out.println("-------------- Final Page Ranks -------------");
     pageRanks.foreach(x -> System.out.println(x));
+
+    long printTime = System.nanoTime() - startTime;
+    System.out.println("Print time = " + printTime + " nanoseconds");
+
   }
 }
