@@ -17,7 +17,7 @@ public class PageRank {
   public static void main(String[] args) {
     // setup runtime
 
-    String path = "/v/filer5b/v38q001/noaht15/Documents/Concurrency/page-rank/src/main/resources/links";
+    String path = "/Users/sunaina/IdeaProjects/page-rank/src/main/resources/links";
 
     SparkConf conf = new SparkConf().setAppName("test app").setMaster("local[20]");
     JavaSparkContext sc = new JavaSparkContext(conf);
@@ -31,7 +31,7 @@ public class PageRank {
     // cleanup file names produce <URL, Contained URLS>
     final JavaPairRDD<String, String> pages = input.mapToPair(x -> {
       String url = x._1;
-      url = url.replace("file:" + path, "");
+      url = url.replace("file:" + path + "/", "");
       url = url.replace("%2f", "/");
       return new Tuple2<>(url, x._2);
     });
@@ -85,13 +85,15 @@ public class PageRank {
     JavaPairRDD<String, Double> pageRanks = allLinks.mapToPair(x -> new Tuple2<>(x, 1.0));
     pageRanks.persist(StorageLevel.MEMORY_ONLY());
 
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 10; i++) {
       //System.out.println("-------------- Iteration:" + i + " -------------");
       //pageRanks.foreach(x -> System.out.println(x));
 
+      JavaPairRDD<String, Tuple2<Double, Integer>> prsAndOutgoingCount = pageRanks
+              .join(outgoingCount);
+
       // Produces (url | cur page rank) of all pages without links
-      JavaPairRDD<String, Double> noOutgoingTemp = pageRanks
-              .join(outgoingCount)
+      JavaPairRDD<String, Double> noOutgoingTemp = prsAndOutgoingCount
               .filter(x -> x._2._2 == 0)
               .mapToPair(x -> new Tuple2<>(x._1, x._2._1));
 
@@ -101,8 +103,7 @@ public class PageRank {
       Double offset = total / (numLinks - 1);
 
       // Produces (url | cur page rank) of pages with outgoing links
-      JavaPairRDD<String, Tuple2<Double, Integer>> outgoingTempCount = pageRanks
-              .join(outgoingCount)
+      JavaPairRDD<String, Tuple2<Double, Integer>> outgoingTempCount = prsAndOutgoingCount
               .filter(x -> x._2._2 >= 1);
 
 
