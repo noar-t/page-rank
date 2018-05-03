@@ -17,7 +17,7 @@ public class PageRankLite {
 
         String path = "/Users/sunaina/IdeaProjects/page-rank/src/main/resources/test_links";
 
-        SparkConf conf = new SparkConf().setAppName("test app").setMaster("local[1]");
+        SparkConf conf = new SparkConf().setAppName("test app").setMaster("local[" + args[0] + "]");
         JavaSparkContext sc = new JavaSparkContext(conf);
         sc.setLogLevel("ERROR");
 
@@ -111,6 +111,8 @@ public class PageRankLite {
 
         long printTime = System.nanoTime() - startTime;
         System.out.println("Print time = " + printTime + " nanoseconds");
+
+        System.out.println(pageRankTime + printTime + " ########THIS ONE");
 
     }
 }

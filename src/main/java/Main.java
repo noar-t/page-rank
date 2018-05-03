@@ -8,7 +8,10 @@ public class Main {
 
       System.out.println("lite version");
 
-      PageRankLite.main(new String[0]);
+      for (int i = 1; i < 21; i ++) {
+          String[] arg = {"" + i};
+          PageRankLite.main(arg);
+      }
 
     }
 }
