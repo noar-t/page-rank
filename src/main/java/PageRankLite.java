@@ -15,9 +15,9 @@ public class PageRankLite {
     public static void main(String[] args) {
         // setup runtime
 
-        String path = "/Users/sunaina/IdeaProjects/page-rank/src/main/resources/links";
+        String path = "/Users/sunaina/IdeaProjects/page-rank/src/main/resources/test_links";
 
-        SparkConf conf = new SparkConf().setAppName("test app").setMaster("local[20]");
+        SparkConf conf = new SparkConf().setAppName("test app").setMaster("local[1]");
         JavaSparkContext sc = new JavaSparkContext(conf);
         sc.setLogLevel("ERROR");
 
@@ -69,7 +69,7 @@ public class PageRankLite {
         JavaPairRDD<String, Double> pageRanks = urlPairs.mapToPair(x -> new Tuple2<>(x._1, 1.0));
         pageRanks.persist(StorageLevel.MEMORY_ONLY());
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 50; i++) {
             //System.out.println("-------------- Iteration:" + i + " -------------");
             //pageRanks.foreach(x -> System.out.println(x));
 

@@ -130,7 +130,6 @@ public class PageRank {
 
       //weightedNoOutgoingPR.foreach(x -> System.out.println("noout PR" + x));
 
-      // TODO need to set outgoing prs to 0
       JavaPairRDD<String, Double> newPRsOnlyOff = outgoingTemp
               .mapToPair(x -> new Tuple2<>(x._1, 0.0))
               .union(weightedNoOutgoingPR)
@@ -139,8 +138,6 @@ public class PageRank {
 
 
       //newPRsOnlyOff.foreach(x -> System.out.println("new PRs" + x));
-
-      //TODO also add dampening
 
       JavaPairRDD<String, Double> destPRs = weightedOutgoingPR
               .join(urlPairs)

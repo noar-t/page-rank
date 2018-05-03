@@ -1,0 +1,9 @@
+yahoo.com
+canonical.com
+spotify.com
+www.apple.com
+www.utexas.edu
+www.hulu.com
+java.com
+spark.com
+www.reddit.com

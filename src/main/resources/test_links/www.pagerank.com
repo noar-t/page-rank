@@ -1,0 +1,9 @@
+dell.com
+www.mit.edu
+theexpanse.com
+lenovo.com
+spotify.com
+www.hulu.com
+www.facebook.com
+www.linkedin.com
+ship.com

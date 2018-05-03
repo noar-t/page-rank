@@ -1,0 +1,9 @@
+x.com
+saavn.com
+www.microsoft.com
+gameofthrones.com
+whyisthetowerorange.com
+fourteenthousand.com
+arduino.com
+www.reddit.com
+ship.com

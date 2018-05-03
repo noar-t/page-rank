@@ -1,0 +1,9 @@
+x.com
+saavn.com
+www.netflix.com
+instagram.com
+lenovo.com
+java.com
+www.google.com
+marvelus.me
+www.reddit.com

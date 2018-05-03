@@ -1,0 +1,2 @@
+dell.com
+canonical.com
